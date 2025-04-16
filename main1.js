@@ -3,7 +3,6 @@ const path = require("path");
 const axios = require("axios");
 const colors = require("colors");
 const { HttpsProxyAgent } = require("https-proxy-agent");
-const { SocksProxyAgent } = require("socks-proxy-agent");
 const readline = require("readline");
 const user_agents = require("./config/userAgents.js");
 const settings = require("./config/config.js");
@@ -138,16 +137,8 @@ class ClientAPI {
 
   async checkProxyIP() {
     try {
-      let proxyAgent;
-      if (this.proxy.startsWith("socks5://")) {
-        proxyAgent = new SocksProxyAgent(this.proxy);
-      } else {
-        proxyAgent = new HttpsProxyAgent(this.proxy);
-      }
-      const response = await axios.get("https://api.ipify.org?format=json", { 
-        httpsAgent: proxyAgent,
-        httpAgent: proxyAgent 
-      });
+      const proxyAgent = new HttpsProxyAgent(this.proxy);
+      const response = await axios.get("https://api.ipify.org?format=json", { httpsAgent: proxyAgent });
       if (response.status === 200) {
         this.proxyIP = response.data.ip;
         return response.data.ip;
@@ -182,11 +173,7 @@ class ClientAPI {
 
     let proxyAgent = null;
     if (settings.USE_PROXY) {
-      if (this.proxy.startsWith("socks5://")) {
-        proxyAgent = new SocksProxyAgent(this.proxy);
-      } else {
-        proxyAgent = new HttpsProxyAgent(this.proxy);
-      }
+      proxyAgent = new HttpsProxyAgent(this.proxy);
     }
     let currRetries = 0;
     do {
@@ -210,6 +197,8 @@ class ClientAPI {
         }
         if (error.status == 401) {
           this.log(`Unauthorized: ${url}`);
+          await sleep(1);
+          process.exit(1);
         }
         if (error.status == 400) {
           this.log(`Invalid request for ${url}, maybe have new update from server | contact: https://t.me/airdrophuntersieutoc to get new update!`, "error");
@@ -257,6 +246,10 @@ class ClientAPI {
   async getUserData() {
     return this.makeRequest(`${this.baseURL_v2}/v2/users/me`, "get");
   }
+
+  // async getWokers() {
+  //   return this.makeRequest(`${this.baseURL_v2}/v2/users/workers`, "get");
+  // }
 
   async getRealTime() {
     return this.makeRequest(`${this.baseURL}/v2/reward_realtime`, "get");
@@ -353,92 +346,91 @@ class ClientAPI {
     return null;
   }
 
-  async handleCheckin() {
-    const resCheckin = await this.checkinStatus();
-    if (!resCheckin.success) return this.log("Can't get checkin status...skipping", "warning");
-    const dataCheckin = resCheckin.data;
-    const isClaimed = dataCheckin?.claimed;
-    const nextClaim = dataCheckin?.nextClaim;
+  // async handleCheckin() {
+  //   const resCheckin = await this.checkinStatus();
+  //   if (!resCheckin.success) return this.log("Can't get checkin status...skipping", "warning");
+  //   const dataCheckin = resCheckin.data;
+  //   const isClaimed = dataCheckin?.claimed;
+  //   const nextClaim = dataCheckin?.nextClaim;
 
-    if (!isClaimed) {
-      const payload = {
-        signTx: "",
-      };
-      const resClaim = await this.checkin(payload);
-    } else {
-      this.log(`Next checkin is ${new Date(nextClaim).toLocaleString()}`, "warning");
-    }
-  }
+  //   if (!isClaimed) {
+  //     const payload = {
+  //       signTx: "",
+  //     };
+  //     const resClaim = await this.checkin(payload);
+  //   } else {
+  //     this.log(`Next checkin is ${new Date(nextClaim).toLocaleString()}`, "warning");
+  //   }
+  // }
 
-  async handleCheckPoint() {
-    this.log(`Sync checkpoint...`);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Đặt giờ về 0 để so sánh chỉ ngày
+  // async handleCheckPoint() {
+  //   this.log(`Sync checkpoint...`);
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0); // Đặt giờ về 0 để so sánh chỉ ngày
 
-    let totalPoints = 0;
-    const dataRealTime = await this.getRealTime();
-    const dataHistory = await this.getHistoryReward();
+  //   let totalPoints = 0;
+  //   const dataRealTime = await this.getRealTime();
+  //   const dataHistory = await this.getHistoryReward();
 
-    // Kiểm tra thành công của dữ liệu
-    if (!dataRealTime.success || !dataHistory.success) {
-      this.log(`Can't sync checkpoint`, "warning");
-      return; // Dừng hàm nếu không thành công
-    }
+  //   // Kiểm tra thành công của dữ liệu
+  //   if (!dataRealTime.success || !dataHistory.success) {
+  //     this.log(`Can't sync checkpoint`, "warning");
+  //     return; // Dừng hàm nếu không thành công
+  //   }
 
-    // Tìm dữ liệu cho ngày hôm nay từ dataRealTime
-    const entryToday = dataRealTime.data.find((entry) => {
-      const entryDate = new Date(entry.date);
-      entryDate.setHours(0, 0, 0, 0);
-      return entryDate.getTime() === today.getTime();
-    });
+  //   // Tìm dữ liệu cho ngày hôm nay từ dataRealTime
+  //   const entryToday = dataRealTime.data.find((entry) => {
+  //     const entryDate = new Date(entry.date);
+  //     entryDate.setHours(0, 0, 0, 0);
+  //     return entryDate.getTime() === today.getTime();
+  //   });
 
-    // Tìm dữ liệu cho ngày hôm nay từ dataHistory
-    const entryTodayHis = dataHistory.data.find((entry) => {
-      const entryDate = new Date(entry.date);
-      entryDate.setHours(0, 0, 0, 0);
-      return entryDate.getTime() === today.getTime();
-    });
+  //   // Tìm dữ liệu cho ngày hôm nay từ dataHistory
+  //   const entryTodayHis = dataHistory.data.find((entry) => {
+  //     const entryDate = new Date(entry.date);
+  //     entryDate.setHours(0, 0, 0, 0);
+  //     return entryDate.getTime() === today.getTime();
+  //   });
 
-    // Tính điểm nếu tìm thấy dữ liệu cho ngày hôm nay
-    if (entryToday) {
-      totalPoints += parseFloat(entryToday.total_heartbeats) || 0;
-      totalPoints += parseFloat(entryToday.total_scraps) || 0;
-      totalPoints += parseFloat(entryToday.total_prompts) || 0;
+  //   // Tính điểm nếu tìm thấy dữ liệu cho ngày hôm nay
+  //   if (entryToday) {
+  //     totalPoints += parseFloat(entryToday.total_heartbeats) || 0;
+  //     totalPoints += parseFloat(entryToday.total_scraps) || 0;
+  //     totalPoints += parseFloat(entryToday.total_prompts) || 0;
 
-      // Nếu có dữ liệu lịch sử cho ngày hôm nay, cộng điểm
-      if (entryTodayHis) {
-        totalPoints += parseFloat(entryTodayHis.total_points) || 0;
-      }
+  //     // Nếu có dữ liệu lịch sử cho ngày hôm nay, cộng điểm
+  //     if (entryTodayHis) {
+  //       totalPoints += parseFloat(entryTodayHis.total_points) || 0;
+  //     }
 
-      this.log(`[${new Date().toLocaleString()}] Today earning: ${totalPoints || 0} | Recheck after an hour`, "success");
-    } else {
-      this.log(`No data  point found for today.`, "warning");
-    }
-  }
+  //     this.log(`[${new Date().toLocaleString()}] Today earning: ${totalPoints || 0} | Recheck after an hour`, "success");
+  //   } else {
+  //     this.log(`No data  point found for today.`, "warning");
+  //   }
+  // }
 
-  async handleSyncData() {
-    this.log(`Sync data...`);
-    let userData = { success: true, data: null, status: 0 },
-      retries = 0;
+  // async handleSyncData() {
+  //   this.log(`Sync data...`);
+  //   let userData = { success: true, data: null, status: 0 },
+  //     retries = 0;
 
-    do {
-      userData = await this.getUserData();
-      await sleep(20);
-      if (userData?.success) break;
-      retries++;
-    } while (retries < 1 && userData.status !== 400);
-    if (userData.success) {
-      const balanceData = await this.getBalance();
-      const { referral_code } = userData.data;
-      // const wokerData = await this.getWokers();
+  //   do {
+  //     userData = await this.getUserData();
+  //     if (userData?.success) break;
+  //     retries++;
+  //   } while (retries < 1 && userData.status !== 400);
+  //   if (userData.success) {
+  //     const balanceData = await this.getBalance();
+  //     const { referral_code } = userData.data;
+  //     // const wokerData = await this.getWokers();
 
-      const { name, point, totalPoint, endDate } = balanceData.data;
-      this.log(`Ref code: ${referral_code} | Point ${name}: ${point} | Total points: ${totalPoint} | End date ${name}: ${endDate}`, "custom");
-    } else {
-      return this.log("Can't sync new data...skipping", "warning");
-    }
-    return userData;
-  }
+  //     const { name, point, totalPoint, endDate } = balanceData.data;
+  //     this.log(`Ref code: ${referral_code} | Point ${name}: ${point} | Total points: ${totalPoint} | End date ${name}: ${endDate}`, "custom");
+  //   } else {
+  //     return this.log("Can't sync new data...skipping", "warning");
+  //   }
+  //   return userData;
+  // }
 
   async handleCreateDevice() {
     // const res = await this.getWokers();
@@ -517,22 +509,22 @@ class ClientAPI {
 
     const token = await this.getValidToken();
     if (!token) return;
-    await sleep(50);
-    const userData = await this.handleSyncData();
-    if (userData.success) {
-      // await this.handleCheckin();
-      await sleep(50);
-      await this.handleCheckPoint();
-      const interValCheckPoint = setInterval(() => this.handleCheckPoint(), 3600 * 1000);
-      intervalIds.push(interValCheckPoint);
-      if (settings.AUTO_MINING) {
-        await this.handleHB();
-        // await sleep(1);
-        // await this.handleSyncData();
-      }
-    } else {
-      this.log("Can't get use info...skipping", "error");
-    }
+    // await this.handleSyncData();
+    await this.handleHB();
+    // if (userData.success) {
+    //   // await this.handleCheckin();
+    //   // await sleep(1);
+    //   await this.handleCheckPoint();
+    //   const interValCheckPoint = setInterval(() => this.handleCheckPoint(), 3600 * 1000);
+    //   intervalIds.push(interValCheckPoint);
+    //   if (settings.AUTO_MINING) {
+    //     await this.handleHB();
+    //     // await sleep(1);
+    //     // await this.handleSyncData();
+    //   }
+    // } else {
+    //   this.log("Can't get use info...skipping", "error");
+    // }
   }
 }
 
@@ -604,7 +596,7 @@ async function main() {
   await sleep(1);
   while (true) {
     // localStorage = JSON.parse(fs.readFileSync("localStorage.json", "utf8"));
-    await sleep(20);
+    await sleep(2);
     for (let i = 0; i < itemDatas.length; i += maxThreads) {
       const batch = itemDatas.slice(i, i + maxThreads);
 

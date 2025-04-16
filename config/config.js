@@ -35,7 +35,7 @@ const settings = {
   USE_PROXY: process.env.USE_PROXY ? process.env.USE_PROXY.toLowerCase() === "true" : false,
 
   API_ID: process.env.API_ID ? process.env.API_ID : null,
-  BASE_URL: process.env.BASE_URL ? process.env.BASE_URL : "https://api.sogni.ai",
+  BASE_URL: process.env.BASE_URL ? process.env.BASE_URL : "https://rewardstn.openledger.xyz/web/api",
   REF_CODE: process.env.REF_CODE ? process.env.REF_CODE : "leduychung",
   RPC_URL: process.env.RPC_URL ? process.env.RPC_URL : "https://evmrpc-testnet.0g.ai",
   CHAIN_ID: process.env.CHAIN_ID ? process.env.CHAIN_ID : 16600,
@@ -46,7 +46,7 @@ const settings = {
   CAPTCHA_URL: process.env.CAPTCHA_URL ? process.env.CAPTCHA_URL : null,
   WEBSITE_KEY: process.env.WEBSITE_KEY ? process.env.WEBSITE_KEY : null,
 
-  DELAY_BETWEEN_REQUESTS: process.env.DELAY_BETWEEN_REQUESTS && _isArray(process.env.DELAY_BETWEEN_REQUESTS) ? JSON.parse(process.env.DELAY_BETWEEN_REQUESTS) : [1, 5],
+  DELAY_BETWEEN_REQUESTS: process.env.DELAY_BETWEEN_REQUESTS && _isArray(process.env.DELAY_BETWEEN_REQUESTS) ? JSON.parse(process.env.DELAY_BETWEEN_REQUESTS) : [50, 60],
   DELAY_START_BOT: process.env.DELAY_START_BOT && _isArray(process.env.DELAY_START_BOT) ? JSON.parse(process.env.DELAY_START_BOT) : [1, 15],
   DELAY_CHAT: process.env.DELAY_CHAT && _isArray(process.env.DELAY_CHAT) ? JSON.parse(process.env.DELAY_CHAT) : [1, 15],
   MAP_RANGE_CHALLENGE: process.env.MAP_RANGE_CHALLENGE && _isArray(process.env.MAP_RANGE_CHALLENGE) ? JSON.parse(process.env.MAP_RANGE_CHALLENGE) : [0, 0],
