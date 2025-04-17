@@ -3,7 +3,6 @@ const path = require("path");
 const axios = require("axios");
 const colors = require("colors");
 const { HttpsProxyAgent } = require("https-proxy-agent");
-const { SocksProxyAgent } = require("socks-proxy-agent");
 const readline = require("readline");
 const user_agents = require("./config/userAgents.js");
 const settings = require("./config/config.js");
@@ -138,16 +137,8 @@ class ClientAPI {
 
   async checkProxyIP() {
     try {
-      let proxyAgent;
-      if (this.proxy.startsWith("socks5://")) {
-        proxyAgent = new SocksProxyAgent(this.proxy);
-      } else {
-        proxyAgent = new HttpsProxyAgent(this.proxy);
-      }
-      const response = await axios.get("https://api.ipify.org?format=json", { 
-        httpsAgent: proxyAgent,
-        httpAgent: proxyAgent 
-      });
+      const proxyAgent = new HttpsProxyAgent(this.proxy);
+      const response = await axios.get("https://api.ipify.org?format=json", { httpsAgent: proxyAgent });
       if (response.status === 200) {
         this.proxyIP = response.data.ip;
         return response.data.ip;
@@ -182,11 +173,7 @@ class ClientAPI {
 
     let proxyAgent = null;
     if (settings.USE_PROXY) {
-      if (this.proxy.startsWith("socks5://")) {
-        proxyAgent = new SocksProxyAgent(this.proxy);
-      } else {
-        proxyAgent = new HttpsProxyAgent(this.proxy);
-      }
+      proxyAgent = new HttpsProxyAgent(this.proxy);
     }
     let currRetries = 0;
     do {
@@ -195,7 +182,7 @@ class ClientAPI {
           method,
           url: `${url}`,
           headers,
-          timeout: 60000,
+          timeout: 120000,
           ...(proxyAgent ? { httpsAgent: proxyAgent, httpAgent: proxyAgent } : {}),
           ...(method.toLowerCase() != "get" ? { data: JSON.stringify(data || {}) } : {}),
         });
@@ -210,6 +197,7 @@ class ClientAPI {
         }
         if (error.status == 401) {
           this.log(`Unauthorized: ${url}`);
+          await sleep(10);
         }
         if (error.status == 400) {
           this.log(`Invalid request for ${url}, maybe have new update from server | contact: https://t.me/airdrophuntersieutoc to get new update!`, "error");
@@ -257,6 +245,10 @@ class ClientAPI {
   async getUserData() {
     return this.makeRequest(`${this.baseURL_v2}/v2/users/me`, "get");
   }
+
+  // async getWokers() {
+  //   return this.makeRequest(`${this.baseURL_v2}/v2/users/workers`, "get");
+  // }
 
   async getRealTime() {
     return this.makeRequest(`${this.baseURL}/v2/reward_realtime`, "get");
@@ -382,7 +374,7 @@ class ClientAPI {
     // Kiểm tra thành công của dữ liệu
     if (!dataRealTime.success || !dataHistory.success) {
       this.log(`Can't sync checkpoint`, "warning");
-      return; // Dừng hàm nếu không thành công
+      // return; // Dừng hàm nếu không thành công
     }
 
     // Tìm dữ liệu cho ngày hôm nay từ dataRealTime
@@ -423,12 +415,13 @@ class ClientAPI {
 
     do {
       userData = await this.getUserData();
-      await sleep(20);
+      await sleep(60);
       if (userData?.success) break;
       retries++;
     } while (retries < 1 && userData.status !== 400);
     if (userData.success) {
       const balanceData = await this.getBalance();
+      await sleep(120)
       const { referral_code } = userData.data;
       // const wokerData = await this.getWokers();
 
@@ -475,6 +468,7 @@ class ClientAPI {
       if (msgType === "REGISTER") {
         const payload = this.generateRegisterMessage(address, workerId, browserId, msgType);
         const register = await this.nodesCommunicate(payload);
+        await sleep(120);
         if (register.success) {
           this.log(`Ping success!!!`, "success");
         } else {
@@ -486,6 +480,7 @@ class ClientAPI {
         const payload = this.generateHeartbeatMessage(address, workerId, msgType, memory, storage);
         while (true) {
           const heartbeat = await this.nodesCommunicate(payload);
+          await sleep(120);
           if (heartbeat) {
             this.log(`Ping success!!!`, "success");
           } else {
@@ -517,17 +512,20 @@ class ClientAPI {
 
     const token = await this.getValidToken();
     if (!token) return;
-    await sleep(50);
+    await sleep(60);
     const userData = await this.handleSyncData();
+    await sleep(60);
     if (userData.success) {
       // await this.handleCheckin();
-      await sleep(50);
+      // await sleep(120);
       await this.handleCheckPoint();
+      await sleep(120);
       const interValCheckPoint = setInterval(() => this.handleCheckPoint(), 3600 * 1000);
       intervalIds.push(interValCheckPoint);
+      await sleep(120);
       if (settings.AUTO_MINING) {
         await this.handleHB();
-        // await sleep(1);
+        await sleep(60);
         // await this.handleSyncData();
       }
     } else {
@@ -604,7 +602,7 @@ async function main() {
   await sleep(1);
   while (true) {
     // localStorage = JSON.parse(fs.readFileSync("localStorage.json", "utf8"));
-    await sleep(20);
+    await sleep(2);
     for (let i = 0; i < itemDatas.length; i += maxThreads) {
       const batch = itemDatas.slice(i, i + maxThreads);
 
