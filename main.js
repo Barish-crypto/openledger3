@@ -369,8 +369,9 @@ class ClientAPI {
 
     let totalPoints = 0;
     const dataRealTime = await this.getRealTime();
+    await sleep(100);
     const dataHistory = await this.getHistoryReward();
-
+    await sleep(100);
     // Kiểm tra thành công của dữ liệu
     if (!dataRealTime.success || !dataHistory.success) {
       this.log(`Can't sync checkpoint`, "warning");
@@ -415,7 +416,7 @@ class ClientAPI {
 
     do {
       userData = await this.getUserData();
-      await sleep(60);
+      await sleep(120);
       if (userData?.success) break;
       retries++;
     } while (retries < 1 && userData.status !== 400);
