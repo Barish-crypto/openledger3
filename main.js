@@ -469,7 +469,7 @@ class ClientAPI {
       if (msgType === "REGISTER") {
         const payload = this.generateRegisterMessage(address, workerId, browserId, msgType);
         const register = await this.nodesCommunicate(payload);
-        await sleep(120);
+        // await sleep(120);
         if (register.success) {
           this.log(`Ping success!!!`, "success");
         } else {
@@ -481,7 +481,7 @@ class ClientAPI {
         const payload = this.generateHeartbeatMessage(address, workerId, msgType, memory, storage);
         while (true) {
           const heartbeat = await this.nodesCommunicate(payload);
-          await sleep(120);
+          // await sleep(120);
           if (heartbeat) {
             this.log(`Ping success!!!`, "success");
           } else {
@@ -512,26 +512,29 @@ class ClientAPI {
     }
 
     const token = await this.getValidToken();
-    if (!token) return;
-    await sleep(60);
-    const userData = await this.handleSyncData();
-    await sleep(60);
-    if (userData.success) {
-      // await this.handleCheckin();
-      // await sleep(120);
-      await this.handleCheckPoint();
-      await sleep(120);
-      const interValCheckPoint = setInterval(() => this.handleCheckPoint(), 3600 * 1000);
-      intervalIds.push(interValCheckPoint);
-      await sleep(120);
-      if (settings.AUTO_MINING) {
-        await this.handleHB();
-        await sleep(60);
-        // await this.handleSyncData();
-      }
-    } else {
-      this.log("Can't get use info...skipping", "error");
+    if (settings.AUTO_MINING) {
+      await this.handleHB();
+      // await sleep(60);
+      // await this.handleSyncData();
     }
+    // if (!token) return;
+    // const userData = await this.handleSyncData();
+    // if (userData.success) {
+    //   // await this.handleCheckin();
+    //   // await sleep(120);
+    //   await this.handleCheckPoint();
+    //   await sleep(120);
+    //   const interValCheckPoint = setInterval(() => this.handleCheckPoint(), 3600 * 1000);
+    //   intervalIds.push(interValCheckPoint);
+    //   await sleep(120);
+    //   if (settings.AUTO_MINING) {
+    //     await this.handleHB();
+    //     // await sleep(60);
+    //     // await this.handleSyncData();
+    //   }
+    // } else {
+    //   this.log("Can't get use info...skipping", "error");
+    // }
   }
 }
 
