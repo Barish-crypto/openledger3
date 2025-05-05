@@ -182,7 +182,7 @@ class ClientAPI {
           method,
           url: `${url}`,
           headers,
-          timeout: 120000,
+          timeout: 12000,
           ...(proxyAgent ? { httpsAgent: proxyAgent, httpAgent: proxyAgent } : {}),
           ...(method.toLowerCase() != "get" ? { data: JSON.stringify(data || {}) } : {}),
         });
@@ -481,7 +481,7 @@ class ClientAPI {
         const payload = this.generateHeartbeatMessage(address, workerId, msgType, memory, storage);
         while (true) {
           const heartbeat = await this.nodesCommunicate(payload);
-          // await sleep(120);
+          await sleep(160);
           if (heartbeat) {
             this.log(`Ping success!!!`, "success");
           } else {
@@ -512,29 +512,24 @@ class ClientAPI {
     }
 
     const token = await this.getValidToken();
-    if (settings.AUTO_MINING) {
-      await this.handleHB();
-      // await sleep(60);
-      // await this.handleSyncData();
+    if (!token) return;
+    const userData = await this.handleSyncData();
+    if (userData.success) {
+      // await this.handleCheckin();
+      // await sleep(120);
+      await this.handleCheckPoint();
+      await sleep(120);
+      const interValCheckPoint = setInterval(() => this.handleCheckPoint(), 3600 * 1000);
+      intervalIds.push(interValCheckPoint);
+      await sleep(120);
+      if (settings.AUTO_MINING) {
+        await this.handleHB();
+        // await sleep(60);
+        // await this.handleSyncData();
+      }
+    } else {
+      this.log("Can't get use info...skipping", "error");
     }
-    // if (!token) return;
-    // const userData = await this.handleSyncData();
-    // if (userData.success) {
-    //   // await this.handleCheckin();
-    //   // await sleep(120);
-    //   await this.handleCheckPoint();
-    //   await sleep(120);
-    //   const interValCheckPoint = setInterval(() => this.handleCheckPoint(), 3600 * 1000);
-    //   intervalIds.push(interValCheckPoint);
-    //   await sleep(120);
-    //   if (settings.AUTO_MINING) {
-    //     await this.handleHB();
-    //     // await sleep(60);
-    //     // await this.handleSyncData();
-    //   }
-    // } else {
-    //   this.log("Can't get use info...skipping", "error");
-    // }
   }
 }
 
